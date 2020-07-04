@@ -53,7 +53,24 @@ void Visuals::playerModel(FrameStage stage) noexcept
         "models/player/custom_player/legacy/tm_phoenix_variantg.mdl",
         "models/player/custom_player/legacy/tm_phoenix_varianth.mdl",
         
-        "models/player/custom_player/legacy/tm_pirate.mdl"
+        "models/player/custom_player/legacy/tm_pirate.mdl",
+        "models/player/custom_player/legacy/tm_pirate_varianta.mdl",
+        "models/player/custom_player/legacy/tm_pirate_variantb.mdl",
+        "models/player/custom_player/legacy/tm_pirate_variantc.mdl",
+        "models/player/custom_player/legacy/tm_pirate_variantd.mdl",
+        "models/player/custom_player/legacy/tm_anarchist.mdl",
+        "models/player/custom_player/legacy/tm_anarchist_varianta.mdl",
+        "models/player/custom_player/legacy/tm_anarchist_variantb.mdl",
+        "models/player/custom_player/legacy/tm_anarchist_variantc.mdl",
+        "models/player/custom_player/legacy/tm_anarchist_variantd.mdl",
+        "models/player/custom_player/legacy/tm_balkan_varianta.mdl",
+        "models/player/custom_player/legacy/tm_balkan_variantb.mdl",
+        "models/player/custom_player/legacy/tm_balkan_variantc.mdl",
+        "models/player/custom_player/legacy/tm_balkan_variantd.mdl",
+        "models/player/custom_player/legacy/tm_balkan_variante.mdl",
+        "models/player/custom_player/legacy/tm_jumpsuit_varianta.mdl",
+        "models/player/custom_player/legacy/tm_jumpsuit_variantb.mdl",
+        "models/player/custom_player/legacy/tm_jumpsuit_variantc.mdl"
         };
 
         switch (team) {
@@ -99,12 +116,12 @@ void Visuals::colorWorld() noexcept
 
         if (config->visuals.world.enabled && (std::strstr(mat->getTextureGroupName(), "World") || std::strstr(mat->getTextureGroupName(), "StaticProp"))) {
             if (config->visuals.world.rainbow)
-                mat->colorModulate(rainbowColor(memory->globalVars->realtime, config->visuals.world.rainbowSpeed));
+                mat->colorModulate(rainbowColor(config->visuals.world.rainbowSpeed));
             else
                 mat->colorModulate(config->visuals.world.color);
         } else if (config->visuals.sky.enabled && std::strstr(mat->getTextureGroupName(), "SkyBox")) {
             if (config->visuals.sky.rainbow)
-                mat->colorModulate(rainbowColor(memory->globalVars->realtime, config->visuals.sky.rainbowSpeed));
+                mat->colorModulate(rainbowColor(config->visuals.sky.rainbowSpeed));
             else
                 mat->colorModulate(config->visuals.sky.color);
         }
