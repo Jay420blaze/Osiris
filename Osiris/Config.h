@@ -90,24 +90,27 @@ public:
         float pitchAngle{ 0.0f };
     } antiAim;
 
-    struct Glow : ColorA {
+    struct Glow {
         bool enabled{ false };
         bool healthBased{ false };
+        float thickness{ 1.0f };
+        float alpha{ 1.0f };
         int style{ 0 };
+        Color color;
     };
     std::array<Glow, 21> glow;
 
     struct Chams {
-        struct Material : ColorA {
+        struct Material {
             bool enabled = false;
             bool healthBased = false;
             bool blinking = false;
             bool wireframe = false;
-            bool cover = false;
-            bool ignorez = false;
+            Color color;
             int material = 0;
+            float alpha = 1.0f;
         };
-        std::vector<Material> materials{ {}, {}, {}, {} };
+        std::array<Material, 2> materials;
     };
 
     std::array<Chams, 18> chams;
@@ -228,7 +231,7 @@ public:
         bool bunnyHop{ false };
         bool customClanTag{ false };
         bool clocktag{ false };
-        char clanTag[16];
+        std::string clanTag;
         bool animatedClanTag{ false };
         bool fastDuck{ false };
         bool moonwalk{ false };

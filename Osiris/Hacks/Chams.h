@@ -1,29 +1,43 @@
 #pragma once
 
-#include <vector>
-
 #include "../Config.h"
-
-class Entity;
-struct ModelRenderInfo;
-class matrix3x4;
-class Material;
+#include "../Interfaces.h"
+#include "../Memory.h"
+#include "../SDK/Entity.h"
+#include "../SDK/Material.h"
+#include "../SDK/ModelRender.h"
+#include "../SDK/StudioRender.h"
+#include "../SDK/GlobalVars.h"
+#include "../SDK/RenderView.h"
+#include "../SDK/Utils.h"
 
 class Chams {
 public:
     Chams() noexcept;
-    bool render(void*, void*, const ModelRenderInfo&, matrix3x4*) noexcept;
+    bool render(void*, void*, const ModelRenderInfo&, matrix3x4*) const noexcept;
 private:
-    void renderPlayer(Entity* player) noexcept;
-    void renderWeapons() noexcept;
-    void renderHands() noexcept;
-    void renderSleeves() noexcept;
+    bool renderPlayers(void*, void*, const ModelRenderInfo&, matrix3x4*) const noexcept;
+    void renderWeapons(void*, void*, const ModelRenderInfo&, matrix3x4*) const noexcept;
+    void renderHands(void*, void*, const ModelRenderInfo&, matrix3x4*) const noexcept;
+    void renderSleeves(void*, void*, const ModelRenderInfo&, matrix3x4*) const noexcept;
 
     enum ChamsId {
-        ALLIES = 0,
-        ENEMIES,
-        PLANTING,
-        DEFUSING,
+        ALLIES_ALL = 0,
+        ALLIES_VISIBLE,
+        ALLIES_OCCLUDED,
+
+        ENEMIES_ALL,
+        ENEMIES_VISIBLE,
+        ENEMIES_OCCLUDED,
+
+        PLANTING_ALL,
+        PLANTING_VISIBLE,
+        PLANTING_OCCLUDED,
+
+        DEFUSING_ALL,
+        DEFUSING_VISIBLE,
+        DEFUSING_OCCLUDED,
+
         LOCALPLAYER,
         WEAPONS,
         HANDS,
@@ -42,8 +56,6 @@ private:
     Material* gold;
     Material* plastic;
     Material* glow;
-    Material* pearlescent;
-    Material* metallic;
 
     constexpr auto dispatchMaterial(int id) const noexcept
     {
@@ -60,16 +72,45 @@ private:
         case 8: return gold;
         case 9: return plastic;
         case 10: return glow;
-        case 11: return pearlescent;
-        case 12: return metallic;
         }
     }
 
-    bool appliedChams;
-    void* ctx;
-    void* state;
-    const ModelRenderInfo* info;
-    matrix3x4* customBoneToWorld;
+    // TODO: move to Chams.cpp
+    constexpr void applyChams(const Config::Chams::Material& chams, bool ignorez, int health = 0) const noexcept
+    {
+        const auto material = dispatchMaterial(chams.material);
+        if (!material)
+            return;
 
-    void applyChams(const std::vector<Config::Chams::Material>& chams, int health = 0, matrix3x4* customMatrix = nullptr) noexcept;
+        if (material == glow || material == chrome || material == plastic || material == glass || material == crystal) {
+            if (chams.healthBased && health) {
+                material->findVar("$envmaptint")->setVectorValue(1.0f - health / 100.0f, health / 100.0f, 0.0f);
+            } else if (chams.color.rainbow) {
+                const auto [r, g, b] { rainbowColor(memory->globalVars->realtime, chams.color.rainbowSpeed) };
+                material->findVar("$envmaptint")->setVectorValue(r, g, b);
+            } else {
+                material->findVar("$envmaptint")->setVectorValue(chams.color.color[0], chams.color.color[1], chams.color.color[2]);
+            }
+        } else {
+            if (chams.healthBased && health) {
+                material->colorModulate(1.0f - health / 100.0f, health / 100.0f, 0.0f);
+            } else if (chams.color.rainbow) {
+                const auto [r, g, b] { rainbowColor(memory->globalVars->realtime, chams.color.rainbowSpeed) };
+                material->colorModulate(r, g, b);
+            } else {
+                material->colorModulate(chams.color.color);
+            }
+        }
+
+        const auto pulse = chams.alpha * (chams.blinking ? std::sin(memory->globalVars->currenttime * 5) * 0.5f + 0.5f : 1.0f);
+
+        if (material == glow)
+            material->findVar("$envmapfresnelminmaxexp")->setVecComponentValue(9.0f * (1.2f - pulse), 2);
+        else
+            material->alphaModulate(pulse);
+
+        material->setMaterialVarFlag(MaterialVarFlag::IGNOREZ, ignorez);
+        material->setMaterialVarFlag(MaterialVarFlag::WIREFRAME, chams.wireframe);
+        interfaces->studioRender->forcedMaterialOverride(material);
+    }
 };

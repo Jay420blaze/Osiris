@@ -14,7 +14,6 @@ Config::Config(const char* name) noexcept
     }
 
     listConfigs();
-    misc.clanTag[0] = '\0';
 }
 
 void Config::load(size_t id) noexcept
@@ -93,22 +92,17 @@ void Config::load(size_t id) noexcept
 
         if (glowJson.isMember("Enabled")) glowConfig.enabled = glowJson["Enabled"].asBool();
         if (glowJson.isMember("healthBased")) glowConfig.healthBased = glowJson["healthBased"].asBool();
-
-        // TODO: remove soon
-        if (glowJson.isMember("alpha")) glowConfig.color[3] = glowJson["alpha"].asFloat();
-
+        if (glowJson.isMember("thickness")) glowConfig.thickness = glowJson["thickness"].asFloat();
+        if (glowJson.isMember("alpha")) glowConfig.alpha = glowJson["alpha"].asFloat();
         if (glowJson.isMember("style")) glowConfig.style = glowJson["style"].asInt();
         if (glowJson.isMember("Color")) {
             const auto& colorJson = glowJson["Color"];
-            auto& colorConfig = glowConfig;
+            auto& colorConfig = glowConfig.color;
 
             if (colorJson.isMember("Color")) {
                 colorConfig.color[0] = colorJson["Color"][0].asFloat();
                 colorConfig.color[1] = colorJson["Color"][1].asFloat();
                 colorConfig.color[2] = colorJson["Color"][2].asFloat();
-
-                if (colorJson["Color"].size() == 4)
-                    colorConfig.color[3] = colorJson["Color"][3].asFloat();
             }
 
             if (colorJson.isMember("Rainbow")) colorConfig.rainbow = colorJson["Rainbow"].asBool();
@@ -120,7 +114,7 @@ void Config::load(size_t id) noexcept
         const auto& chamsJson = json["Chams"][i];
         auto& chamsConfig = chams[i];
 
-        for (size_t j = 0; j < chamsConfig.materials.size(); j++) {
+        for (size_t j = 0; j < chams[0].materials.size(); j++) {
             const auto& materialsJson = chamsJson[j];
             auto& materialsConfig = chams[i].materials[j];
 
@@ -129,25 +123,20 @@ void Config::load(size_t id) noexcept
             if (materialsJson.isMember("Blinking")) materialsConfig.blinking = materialsJson["Blinking"].asBool();
             if (materialsJson.isMember("Material")) materialsConfig.material = materialsJson["Material"].asInt();
             if (materialsJson.isMember("Wireframe")) materialsConfig.wireframe = materialsJson["Wireframe"].asBool();
-            if (materialsJson.isMember("Cover")) materialsConfig.cover = materialsJson["Cover"].asBool();
-            if (materialsJson.isMember("Ignore-Z")) materialsConfig.ignorez = materialsJson["Ignore-Z"].asBool();
             if (materialsJson.isMember("Color")) {
                 const auto& colorJson = materialsJson["Color"];
-                auto& colorConfig = materialsConfig; // leftover
+                auto& colorConfig = materialsConfig.color;
 
                 if (colorJson.isMember("Color")) {
                     colorConfig.color[0] = colorJson["Color"][0].asFloat();
                     colorConfig.color[1] = colorJson["Color"][1].asFloat();
                     colorConfig.color[2] = colorJson["Color"][2].asFloat();
-
-                    if (colorJson["Color"].size() == 4)
-                        colorConfig.color[3] = colorJson["Color"][3].asFloat();
                 }
 
                 if (colorJson.isMember("Rainbow")) colorConfig.rainbow = colorJson["Rainbow"].asBool();
                 if (colorJson.isMember("Rainbow speed")) colorConfig.rainbowSpeed = colorJson["Rainbow speed"].asFloat();
             }
-            if (materialsJson.isMember("Alpha")) materialsConfig.color[3] = materialsJson["Alpha"].asFloat();
+            if (materialsJson.isMember("Alpha")) materialsConfig.alpha = materialsJson["Alpha"].asFloat();
         }
     }
 
@@ -820,7 +809,7 @@ void Config::load(size_t id) noexcept
         if (miscJson.isMember("Bunny hop")) misc.bunnyHop = miscJson["Bunny hop"].asBool();
         if (miscJson.isMember("Custom clan tag")) misc.customClanTag = miscJson["Custom clan tag"].asBool();
         if (miscJson.isMember("Clock tag")) misc.clocktag = miscJson["Clock tag"].asBool();
-        if (miscJson.isMember("Clan tag")) strncpy_s(misc.clanTag, miscJson["Clan tag"].asCString(), _TRUNCATE);
+        if (miscJson.isMember("Clan tag")) misc.clanTag = miscJson["Clan tag"].asString();
         if (miscJson.isMember("Animated clan tag")) misc.animatedClanTag = miscJson["Animated clan tag"].asBool();
         if (miscJson.isMember("Fast duck")) misc.fastDuck = miscJson["Fast duck"].asBool();
         if (miscJson.isMember("Moonwalk")) misc.moonwalk = miscJson["Moonwalk"].asBool();
@@ -1022,16 +1011,17 @@ void Config::save(size_t id) const noexcept
 
         glowJson["Enabled"] = glowConfig.enabled;
         glowJson["healthBased"] = glowConfig.healthBased;
+        glowJson["thickness"] = glowConfig.thickness;
+        glowJson["alpha"] = glowConfig.alpha;
         glowJson["style"] = glowConfig.style;
 
         {
             auto& colorJson = glowJson["Color"];
-            const auto& colorConfig = glowConfig;
+            const auto& colorConfig = glowConfig.color;
 
             colorJson["Color"][0] = colorConfig.color[0];
             colorJson["Color"][1] = colorConfig.color[1];
             colorJson["Color"][2] = colorConfig.color[2];
-            colorJson["Color"][3] = colorConfig.color[3];
 
             colorJson["Rainbow"] = colorConfig.rainbow;
             colorJson["Rainbow speed"] = colorConfig.rainbowSpeed;
@@ -1042,7 +1032,7 @@ void Config::save(size_t id) const noexcept
         auto& chamsJson = json["Chams"][i];
         const auto& chamsConfig = chams[i];
 
-        for (size_t j = 0; j < chamsConfig.materials.size(); j++) {
+        for (size_t j = 0; j < chams[0].materials.size(); j++) {
             auto& materialsJson = chamsJson[j];
             const auto& materialsConfig = chams[i].materials[j];
 
@@ -1051,21 +1041,20 @@ void Config::save(size_t id) const noexcept
             materialsJson["Blinking"] = materialsConfig.blinking;
             materialsJson["Material"] = materialsConfig.material;
             materialsJson["Wireframe"] = materialsConfig.wireframe;
-            materialsJson["Cover"] = materialsConfig.cover;
-            materialsJson["Ignore-Z"] = materialsConfig.ignorez;
 
             {
                 auto& colorJson = materialsJson["Color"];
-                const auto& colorConfig = materialsConfig; // leftover
+                const auto& colorConfig = materialsConfig.color;
 
                 colorJson["Color"][0] = colorConfig.color[0];
                 colorJson["Color"][1] = colorConfig.color[1];
                 colorJson["Color"][2] = colorConfig.color[2];
-                colorJson["Color"][3] = colorConfig.color[3];
 
                 colorJson["Rainbow"] = colorConfig.rainbow;
                 colorJson["Rainbow speed"] = colorConfig.rainbowSpeed;
             }
+
+            materialsJson["Alpha"] = materialsConfig.alpha;
         }
     }
 
@@ -1722,10 +1711,8 @@ void Config::save(size_t id) const noexcept
 
 void Config::add(const char* name) noexcept
 {
-    if (*name && std::find(configs.cbegin(), configs.cend(), name) == configs.cend()) {
+    if (*name && std::find(std::cbegin(configs), std::cend(configs), name) == std::cend(configs))
         configs.emplace_back(name);
-        save(configs.size() - 1);
-    }
 }
 
 void Config::remove(size_t id) noexcept
