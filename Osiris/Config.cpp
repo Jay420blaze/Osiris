@@ -14,7 +14,6 @@ Config::Config(const char* name) noexcept
     }
 
     listConfigs();
-    misc.clanTag[0] = '\0';
 }
 
 void Config::load(size_t id) noexcept
@@ -93,22 +92,17 @@ void Config::load(size_t id) noexcept
 
         if (glowJson.isMember("Enabled")) glowConfig.enabled = glowJson["Enabled"].asBool();
         if (glowJson.isMember("healthBased")) glowConfig.healthBased = glowJson["healthBased"].asBool();
-
-        // TODO: remove soon
-        if (glowJson.isMember("alpha")) glowConfig.color[3] = glowJson["alpha"].asFloat();
-
+        if (glowJson.isMember("thickness")) glowConfig.thickness = glowJson["thickness"].asFloat();
+        if (glowJson.isMember("alpha")) glowConfig.alpha = glowJson["alpha"].asFloat();
         if (glowJson.isMember("style")) glowConfig.style = glowJson["style"].asInt();
         if (glowJson.isMember("Color")) {
             const auto& colorJson = glowJson["Color"];
-            auto& colorConfig = glowConfig;
+            auto& colorConfig = glowConfig.color;
 
             if (colorJson.isMember("Color")) {
                 colorConfig.color[0] = colorJson["Color"][0].asFloat();
                 colorConfig.color[1] = colorJson["Color"][1].asFloat();
                 colorConfig.color[2] = colorJson["Color"][2].asFloat();
-
-                if (colorJson["Color"].size() == 4)
-                    colorConfig.color[3] = colorJson["Color"][3].asFloat();
             }
 
             if (colorJson.isMember("Rainbow")) colorConfig.rainbow = colorJson["Rainbow"].asBool();
@@ -120,7 +114,7 @@ void Config::load(size_t id) noexcept
         const auto& chamsJson = json["Chams"][i];
         auto& chamsConfig = chams[i];
 
-        for (size_t j = 0; j < chamsConfig.materials.size(); j++) {
+        for (size_t j = 0; j < chams[0].materials.size(); j++) {
             const auto& materialsJson = chamsJson[j];
             auto& materialsConfig = chams[i].materials[j];
 
@@ -129,25 +123,20 @@ void Config::load(size_t id) noexcept
             if (materialsJson.isMember("Blinking")) materialsConfig.blinking = materialsJson["Blinking"].asBool();
             if (materialsJson.isMember("Material")) materialsConfig.material = materialsJson["Material"].asInt();
             if (materialsJson.isMember("Wireframe")) materialsConfig.wireframe = materialsJson["Wireframe"].asBool();
-            if (materialsJson.isMember("Cover")) materialsConfig.cover = materialsJson["Cover"].asBool();
-            if (materialsJson.isMember("Ignore-Z")) materialsConfig.ignorez = materialsJson["Ignore-Z"].asBool();
             if (materialsJson.isMember("Color")) {
                 const auto& colorJson = materialsJson["Color"];
-                auto& colorConfig = materialsConfig; // leftover
+                auto& colorConfig = materialsConfig.color;
 
                 if (colorJson.isMember("Color")) {
                     colorConfig.color[0] = colorJson["Color"][0].asFloat();
                     colorConfig.color[1] = colorJson["Color"][1].asFloat();
                     colorConfig.color[2] = colorJson["Color"][2].asFloat();
-
-                    if (colorJson["Color"].size() == 4)
-                        colorConfig.color[3] = colorJson["Color"][3].asFloat();
                 }
 
                 if (colorJson.isMember("Rainbow")) colorConfig.rainbow = colorJson["Rainbow"].asBool();
                 if (colorJson.isMember("Rainbow speed")) colorConfig.rainbowSpeed = colorJson["Rainbow speed"].asFloat();
             }
-            if (materialsJson.isMember("Alpha")) materialsConfig.color[3] = materialsJson["Alpha"].asFloat();
+            if (materialsJson.isMember("Alpha")) materialsConfig.alpha = materialsJson["Alpha"].asFloat();
         }
     }
 
@@ -820,7 +809,7 @@ void Config::load(size_t id) noexcept
         if (miscJson.isMember("Bunny hop")) misc.bunnyHop = miscJson["Bunny hop"].asBool();
         if (miscJson.isMember("Custom clan tag")) misc.customClanTag = miscJson["Custom clan tag"].asBool();
         if (miscJson.isMember("Clock tag")) misc.clocktag = miscJson["Clock tag"].asBool();
-        if (miscJson.isMember("Clan tag")) strncpy_s(misc.clanTag, miscJson["Clan tag"].asCString(), _TRUNCATE);
+        if (miscJson.isMember("Clan tag")) misc.clanTag = miscJson["Clan tag"].asString();
         if (miscJson.isMember("Animated clan tag")) misc.animatedClanTag = miscJson["Animated clan tag"].asBool();
         if (miscJson.isMember("Fast duck")) misc.fastDuck = miscJson["Fast duck"].asBool();
         if (miscJson.isMember("Moonwalk")) misc.moonwalk = miscJson["Moonwalk"].asBool();
@@ -943,60 +932,12 @@ void Config::load(size_t id) noexcept
     }
 
     {
-        const auto& wposJson = json["Window Position Save/Lock"];
+        const auto& skinsearchJson = json["SkinSearch"];
 
-        if (wposJson.isMember("wpos Aimbot X")) wpos.AimbotX = wposJson["wpos Aimbot X"].asFloat(); // "wpos Config" //
-        if (wposJson.isMember("wpos Aimbot Y")) wpos.AimbotY = wposJson["wpos Aimbot Y"].asFloat();
-        if (wposJson.isMember("wpos AntiAim X")) wpos.AntiAimX = wposJson["wpos AntiAim X"].asFloat();
-        if (wposJson.isMember("wpos AntiAim Y")) wpos.AntiAimY = wposJson["wpos AntiAim Y"].asFloat();
-        if (wposJson.isMember("wpos TriggerBot X")) wpos.TriggerBotX = wposJson["wpos TriggerBot X"].asFloat();
-        if (wposJson.isMember("wpos TriggerBot Y")) wpos.TriggerBotY = wposJson["wpos TriggerBot Y"].asFloat();
-        if (wposJson.isMember("wpos Backtrack X")) wpos.BacktrackX = wposJson["wpos Backtrack X"].asFloat();
-        if (wposJson.isMember("wpos Backtrack Y")) wpos.BacktrackY = wposJson["wpos Backtrack Y"].asFloat();
-        if (wposJson.isMember("wpos Glow X")) wpos.GlowX = wposJson["wpos Glow X"].asFloat();
-        if (wposJson.isMember("wpos Glow Y")) wpos.GlowY = wposJson["wpos Glow Y"].asFloat();
-        if (wposJson.isMember("wpos Chams X")) wpos.ChamsX = wposJson["wpos Chams X"].asFloat();
-        if (wposJson.isMember("wpos Chams Y")) wpos.ChamsY = wposJson["wpos Chams Y"].asFloat();
-        if (wposJson.isMember("wpos ESP X")) wpos.EspX = wposJson["wpos ESP X"].asFloat();
-        if (wposJson.isMember("wpos ESP Y")) wpos.EspY = wposJson["wpos ESP Y"].asFloat();
-        if (wposJson.isMember("wpos Visuals X")) wpos.VisualsX = wposJson["wpos Visuals X"].asFloat();
-        if (wposJson.isMember("wpos Visuals Y")) wpos.VisualsY = wposJson["wpos Visuals Y"].asFloat();
-        if (wposJson.isMember("wpos Skinchanger X")) wpos.SkinchangerX = wposJson["wpos Skinchanger X"].asFloat();
-        if (wposJson.isMember("wpos Skinchanger Y")) wpos.SkinchangerY = wposJson["wpos Skinchanger Y"].asFloat();
-        if (wposJson.isMember("wpos Sound X")) wpos.SoundX = wposJson["wpos Sound X"].asFloat();
-        if (wposJson.isMember("wpos Sound Y")) wpos.SoundY = wposJson["wpos Sound Y"].asFloat();
-        if (wposJson.isMember("wpos Style X")) wpos.StyleX = wposJson["wpos Style X"].asFloat();
-        if (wposJson.isMember("wpos Style Y")) wpos.StyleY = wposJson["wpos Style Y"].asFloat();
-        if (wposJson.isMember("wpos Misc X")) wpos.MiscX = wposJson["wpos Misc X"].asFloat();
-        if (wposJson.isMember("wpos Misc Y")) wpos.MiscY = wposJson["wpos Misc Y"].asFloat();
-        if (wposJson.isMember("wpos Reportbot X")) wpos.ReportbotX = wposJson["wpos Reportbot X"].asFloat();
-        if (wposJson.isMember("wpos Reportbot Y")) wpos.ReportbotY = wposJson["wpos Reportbot Y"].asFloat();
-        if (wposJson.isMember("wpos Config X"))wpos.ConfigX = wposJson["wpos Config X"].asFloat();
-        if (wposJson.isMember("wpos Config Y")) wpos.ConfigY = wposJson["wpos Config Y"].asFloat();
-        if (wposJson.isMember("wpos Style2 X")) wpos.Style2X = wposJson["wpos Style2 X"].asFloat();
-        if (wposJson.isMember("wpos Style2 Y")) wpos.Style2Y = wposJson["wpos Style2 Y"].asFloat();
-        if (wposJson.isMember("wpos PurchaseList X")) wpos.PurchaseListX = wposJson["wpos PurchaseList X"].asFloat();
-        if (wposJson.isMember("wpos PurchaseList Y")) wpos.PurchaseListY = wposJson["wpos PurchaseList Y"].asFloat();
-        if (wposJson.isMember("wpos PurchaseList ScaleX")) wpos.PurchaseListScaleX = wposJson["wpos PurchaseList ScaleX"].asFloat();
-        if (wposJson.isMember("wpos PurchaseList ScaleY")) wpos.PurchaseListScaleY = wposJson["wpos PurchaseList ScaleY"].asFloat();
+        if (skinsearchJson.isMember("SearchMode")) SkinSearch.Searchmode = skinsearchJson["SearchMode"].asInt();
 
-        if (wposJson.isMember("wpos Aimbot Lock")) wpos.LockSelectedFlags[0] = wposJson["wpos Aimbot Lock"].asBool();   // "wpos Locks" //
-        if (wposJson.isMember("wpos Anti Aim Lock")) wpos.LockSelectedFlags[1] = wposJson["wpos Anti Aim Lock"].asBool();
-        if (wposJson.isMember("wpos Triggerbot Lock")) wpos.LockSelectedFlags[2] = wposJson["wpos Triggerbot Lock"].asBool();
-        if (wposJson.isMember("wpos Backtrack Lock")) wpos.LockSelectedFlags[3] = wposJson["wpos Backtrack Lock"].asBool();
-        if (wposJson.isMember("wpos Glow Lock")) wpos.LockSelectedFlags[4] = wposJson["wpos Glow Lock"].asBool();
-        if (wposJson.isMember("wpos Chams Lock")) wpos.LockSelectedFlags[5] = wposJson["wpos Chams Lock"].asBool();
-        if (wposJson.isMember("wpos Esp Lock")) wpos.LockSelectedFlags[6] = wposJson["wpos Esp Lock"].asBool();
-        if (wposJson.isMember("wpos Visuals Lock")) wpos.LockSelectedFlags[7] = wposJson["wpos Visuals Lock"].asBool();
-        if (wposJson.isMember("wpos Skinchanger Lock")) wpos.LockSelectedFlags[8] = wposJson["wpos Skinchanger Lock"].asBool();
-        if (wposJson.isMember("wpos Sound Lock")) wpos.LockSelectedFlags[9] = wposJson["wpos Sound Lock"].asBool();
-        if (wposJson.isMember("wpos Style Lock")) wpos.LockSelectedFlags[10] = wposJson["wpos Style Lock"].asBool();
-        if (wposJson.isMember("wpos Misc Lock")) wpos.LockSelectedFlags[11] = wposJson["wpos Misc Lock"].asBool();
-        if (wposJson.isMember("wpos Reportbot Lock")) wpos.LockSelectedFlags[12] = wposJson["wpos Reportbot Lock"].asBool();
-        if (wposJson.isMember("wpos Config Lock")) wpos.LockSelectedFlags[13] = wposJson["wpos Config Lock"].asBool();
-        if (wposJson.isMember("wpos Style2 Lock")) wpos.LockSelectedFlags[14] = wposJson["wpos Style2 Lock"].asBool();
-        if (wposJson.isMember("wpos PurchaseList Lock")) wpos.LockSelectedFlags[15] = wposJson["wpos PurchaseList Lock"].asBool();
     }
+
 }
 
 void Config::save(size_t id) const noexcept
@@ -1070,16 +1011,17 @@ void Config::save(size_t id) const noexcept
 
         glowJson["Enabled"] = glowConfig.enabled;
         glowJson["healthBased"] = glowConfig.healthBased;
+        glowJson["thickness"] = glowConfig.thickness;
+        glowJson["alpha"] = glowConfig.alpha;
         glowJson["style"] = glowConfig.style;
 
         {
             auto& colorJson = glowJson["Color"];
-            const auto& colorConfig = glowConfig;
+            const auto& colorConfig = glowConfig.color;
 
             colorJson["Color"][0] = colorConfig.color[0];
             colorJson["Color"][1] = colorConfig.color[1];
             colorJson["Color"][2] = colorConfig.color[2];
-            colorJson["Color"][3] = colorConfig.color[3];
 
             colorJson["Rainbow"] = colorConfig.rainbow;
             colorJson["Rainbow speed"] = colorConfig.rainbowSpeed;
@@ -1090,7 +1032,7 @@ void Config::save(size_t id) const noexcept
         auto& chamsJson = json["Chams"][i];
         const auto& chamsConfig = chams[i];
 
-        for (size_t j = 0; j < chamsConfig.materials.size(); j++) {
+        for (size_t j = 0; j < chams[0].materials.size(); j++) {
             auto& materialsJson = chamsJson[j];
             const auto& materialsConfig = chams[i].materials[j];
 
@@ -1099,21 +1041,20 @@ void Config::save(size_t id) const noexcept
             materialsJson["Blinking"] = materialsConfig.blinking;
             materialsJson["Material"] = materialsConfig.material;
             materialsJson["Wireframe"] = materialsConfig.wireframe;
-            materialsJson["Cover"] = materialsConfig.cover;
-            materialsJson["Ignore-Z"] = materialsConfig.ignorez;
 
             {
                 auto& colorJson = materialsJson["Color"];
-                const auto& colorConfig = materialsConfig; // leftover
+                const auto& colorConfig = materialsConfig.color;
 
                 colorJson["Color"][0] = colorConfig.color[0];
                 colorJson["Color"][1] = colorConfig.color[1];
                 colorJson["Color"][2] = colorConfig.color[2];
-                colorJson["Color"][3] = colorConfig.color[3];
 
                 colorJson["Rainbow"] = colorConfig.rainbow;
                 colorJson["Rainbow speed"] = colorConfig.rainbowSpeed;
             }
+
+            materialsJson["Alpha"] = materialsConfig.alpha;
         }
     }
 
@@ -1755,63 +1696,12 @@ void Config::save(size_t id) const noexcept
         reportbotJson["Aim Hacking"] = reportbot.aimbot;
         reportbotJson["Other Hacking"] = reportbot.other;
     }
-
     {
-        auto& wposJson = json["Window Position Save/Lock"];
+        auto& skinsearchJson = json["SkinSearch"];
 
-        wposJson["wpos Aimbot X"] = wpos.AimbotX; // wpos XY config save //
-        wposJson["wpos Aimbot Y"] = wpos.AimbotY;
-        wposJson["wpos AntiAim X"] = wpos.AntiAimX;
-        wposJson["wpos AntiAim Y"] = wpos.AntiAimY;
-        wposJson["wpos TriggerBot X"] = wpos.TriggerBotX;
-        wposJson["wpos TriggerBot Y"] = wpos.TriggerBotY;
-        wposJson["wpos Backtrack X"] = wpos.BacktrackX;
-        wposJson["wpos Backtrack Y"] = wpos.BacktrackY;
-        wposJson["wpos Glow X"] = wpos.GlowX;
-        wposJson["wpos Glow Y"] = wpos.GlowY;
-        wposJson["wpos Chams X"] = wpos.ChamsX;
-        wposJson["wpos Chams Y"] = wpos.ChamsY;
-        wposJson["wpos ESP X"] = wpos.EspX;
-        wposJson["wpos ESP Y"] = wpos.EspY;
-        wposJson["wpos Visuals X"] = wpos.VisualsX;
-        wposJson["wpos Visuals Y"] = wpos.VisualsY;
-        wposJson["wpos Skinchanger X"] = wpos.SkinchangerX;
-        wposJson["wpos Skinchanger Y"] = wpos.SkinchangerY;
-        wposJson["wpos Sound X"] = wpos.SoundX;
-        wposJson["wpos Sound Y"] = wpos.SoundY;
-        wposJson["wpos Style X"] = wpos.StyleX;
-        wposJson["wpos Style Y"] = wpos.StyleY;
-        wposJson["wpos Misc X"] = wpos.MiscX;
-        wposJson["wpos Misc Y"] = wpos.MiscY;
-        wposJson["wpos Reportbot X"] = wpos.ReportbotX;
-        wposJson["wpos Reportbot Y"] = wpos.ReportbotY;
-        wposJson["wpos Config X"] = wpos.ConfigX;
-        wposJson["wpos Config Y"] = wpos.ConfigY;
-        wposJson["wpos Style2 X"] = wpos.Style2X;
-        wposJson["wpos Style2 Y"] = wpos.Style2Y;
-        wposJson["wpos PurchaseList X"] = wpos.PurchaseListX;
-        wposJson["wpos PurchaseList Y"] = wpos.PurchaseListY;
-        wposJson["wpos PurchaseList ScaleX"] = wpos.PurchaseListScaleX;
-        wposJson["wpos PurchaseList ScaleY"] = wpos.PurchaseListScaleY;
-
-        wposJson["wpos Aimbot Lock"] = wpos.LockSelectedFlags[0]; // "wpos Locks" //
-        wposJson["wpos Anti Aim Lock"] = wpos.LockSelectedFlags[1];
-        wposJson["wpos Triggerbot Lock"] = wpos.LockSelectedFlags[2];
-        wposJson["wpos Backtrack Lock"] = wpos.LockSelectedFlags[3];
-        wposJson["wpos Glow Lock"] = wpos.LockSelectedFlags[4];
-        wposJson["wpos Chams Lock"] = wpos.LockSelectedFlags[5];
-        wposJson["wpos Esp Lock"] = wpos.LockSelectedFlags[6];
-        wposJson["wpos Visuals Lock"] = wpos.LockSelectedFlags[7];
-        wposJson["wpos Skinchanger Lock"] = wpos.LockSelectedFlags[8];
-        wposJson["wpos Sound Lock"] = wpos.LockSelectedFlags[9];
-        wposJson["wpos Style Lock"] = wpos.LockSelectedFlags[10];
-        wposJson["wpos Misc Lock"] = wpos.LockSelectedFlags[11];
-        wposJson["wpos Reportbot Lock"] = wpos.LockSelectedFlags[12];
-        wposJson["wpos Config Lock"] = wpos.LockSelectedFlags[13];
-        wposJson["wpos Style2 Lock"] = wpos.LockSelectedFlags[14];
-        wposJson["wpos PurchaseList Lock"] = wpos.LockSelectedFlags[15];
+        skinsearchJson["SearchMode"] = SkinSearch.Searchmode;
     }
-
+    
     std::error_code ec;
     std::filesystem::create_directory(path, ec);
 
@@ -1821,10 +1711,8 @@ void Config::save(size_t id) const noexcept
 
 void Config::add(const char* name) noexcept
 {
-    if (*name && std::find(configs.cbegin(), configs.cend(), name) == configs.cend()) {
+    if (*name && std::find(std::cbegin(configs), std::cend(configs), name) == std::cend(configs))
         configs.emplace_back(name);
-        save(configs.size() - 1);
-    }
 }
 
 void Config::remove(size_t id) noexcept

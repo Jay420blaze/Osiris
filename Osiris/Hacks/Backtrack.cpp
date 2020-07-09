@@ -1,9 +1,8 @@
 #include "Backtrack.h"
 #include "Aimbot.h"
+#include "Chams.h"
 #include "../Config.h"
-#include "../SDK/Entity.h"
 #include "../SDK/FrameStage.h"
-#include "../SDK/LocalPlayer.h"
 #include "../SDK/UserCmd.h"
 
 std::deque<Backtrack::Record> Backtrack::records[65];
