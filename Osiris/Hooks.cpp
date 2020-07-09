@@ -135,7 +135,6 @@ static bool __stdcall createMove(float inputSampleTime, UserCmd* cmd) noexcept
     Misc::sniperCrosshair();
     Misc::recoilCrosshair();
     Visuals::removeShadows();
-    Visuals::skybox();
     Reportbot::run();
     Misc::bunnyHop(cmd);
     Misc::autoStrafe(cmd);
@@ -188,14 +187,10 @@ static bool __stdcall createMove(float inputSampleTime, UserCmd* cmd) noexcept
 static int __stdcall doPostScreenEffects(int param) noexcept
 {
     if (interfaces->engine->isInGame()) {
-        Visuals::modifySmoke();
         Visuals::thirdperson();
         Misc::inverseRagdollGravity();
-        Visuals::disablePostProcessing();
         Visuals::reduceFlashEffect();
-        Visuals::removeBlur();
         Visuals::updateBrightness();
-        Visuals::removeGrass();
         Visuals::remove3dSky();
         Glow::render();
     }
@@ -222,7 +217,7 @@ static void __stdcall drawModelExecute(void* ctx, void* state, const ModelRender
         return;
 
     static Chams chams;
-    if (chams.render(ctx, state, info, customBoneToWorld))
+    if (!chams.render(ctx, state, info, customBoneToWorld))
         hooks->modelRender.callOriginal<void, 21>(ctx, state, std::cref(info), customBoneToWorld);
     interfaces->studioRender->forcedMaterialOverride(nullptr);
 }
@@ -260,7 +255,12 @@ static void __stdcall frameStageNotify(FrameStage stage) noexcept
         Misc::fakePrime();
     }
     if (interfaces->engine->isInGame()) {
+        Visuals::skybox(stage);
+        Visuals::removeBlur(stage);
+        Visuals::removeGrass(stage);
+        Visuals::modifySmoke(stage);
         Visuals::playerModel(stage);
+        Visuals::disablePostProcessing(stage);
         Visuals::removeVisualRecoil(stage);
         Visuals::applyZoom(stage);
         Misc::fixAnimationLOD(stage);
@@ -357,18 +357,6 @@ static void __stdcall setDrawColor(int r, int g, int b, int a) noexcept
     if (config->visuals.noScopeOverlay && (*static_cast<std::uint32_t*>(_ReturnAddress()) == 0x20244C8B || *reinterpret_cast<std::uint32_t*>(std::uintptr_t(_ReturnAddress()) + 6) == 0x01ACB7FF))
         a = 0;
     hooks->surface.callOriginal<void, 15>(r, g, b, a);
-}
-
-static bool __stdcall fireEventClientSide(GameEvent* event) noexcept
-{
-    if (event) {
-        switch (fnv::hashRuntime(event->getName())) {
-        case fnv::hash("player_death"):
-            SkinChanger::overrideHudIcon(*event);
-            break;
-        }
-    }
-    return hooks->gameEventManager.callOriginal<bool, 9>(event);
 }
 
 struct ViewSetup {
@@ -554,7 +542,6 @@ void Hooks::install() noexcept
     client.init(interfaces->client);
     clientMode.init(memory->clientMode);
     engine.init(interfaces->engine);
-    gameEventManager.init(interfaces->gameEventManager);
     modelRender.init(interfaces->modelRender);
     panel.init(interfaces->panel);
     sound.init(interfaces->sound);
@@ -574,7 +561,6 @@ void Hooks::install() noexcept
     engine.hookAt(82, isPlayingDemo);
     engine.hookAt(101, getScreenAspectRatio);
     engine.hookAt(218, getDemoPlaybackParameters);
-    gameEventManager.hookAt(9, fireEventClientSide);
     modelRender.hookAt(21, drawModelExecute);
     panel.hookAt(41, paintTraverse);
     sound.hookAt(5, emitSound);
@@ -623,7 +609,6 @@ void Hooks::uninstall() noexcept
     client.restore();
     clientMode.restore();
     engine.restore();
-    gameEventManager.restore();
     modelRender.restore();
     panel.restore();
     sound.restore();
